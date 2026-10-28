@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Expo static export: cada rota vira um .html; Netlify resolve /login → login.html
+[build.environment]
+  NODE_OPTIONS = "--max-old-space-size=8192"
+
+[[redirects]]
+  from = "/(auth)/login"
+  to = "/login"
+  status = 301
+
+[[redirects]]
+  from = "/(auth)/login/*"
+  to = "/login"
+  status = 301
