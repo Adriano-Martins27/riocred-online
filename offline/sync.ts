@@ -1,4 +1,3 @@
-import * as SQLite from 'expo-sqlite';
 import { getDatabase } from './db';
 
 export type SyncStatus = 'pending' | 'synced' | 'error';

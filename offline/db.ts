@@ -1,10 +1,24 @@
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
+
+// Na web, expo-sqlite não existe (sem módulo nativo). Stub no-op:
+// o app web opera sempre online, então a camada offline vira no-op.
+const webStubDb: any = {
+  execAsync: async () => {},
+  runAsync: async () => ({ changes: 0, lastInsertRowId: 0 }),
+  getFirstAsync: async () => null,
+  getAllAsync: async () => [],
+  closeAsync: async () => {},
+};
+
+const IS_WEB = Platform.OS === 'web';
+const SQLite: any = IS_WEB ? null : require('expo-sqlite');
 
 const DB_NAME = 'riocred_offline.db';
 
-let db: SQLite.SQLiteDatabase | null = null;
+let db: any = null;
 
-export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
+export async function getDatabase(): Promise<any> {
+  if (IS_WEB) return webStubDb;
   if (db) return db;
 
   db = await SQLite.openDatabaseAsync(DB_NAME);
@@ -12,7 +26,7 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   return db;
 }
 
-async function initSchema(database: SQLite.SQLiteDatabase) {
+async function initSchema(database: any) {
   // Tabela de estado do usuário (última sync, erros, etc)
   await database.execAsync(`
     CREATE TABLE IF NOT EXISTS offline_user_state (
