@@ -1,13 +1,12 @@
-import { Client } from 'appwrite';
-import { databases } from './appwrite';
+import { client } from './appwrite';
 import { COLLECTIONS } from './collections';
 import { upsertSnapshot, deleteSnapshot } from '@/offline/sync';
 import { useEffect } from 'react';
 
 const DATABASE_ID = 'riocred';
 
-let realtime: Client | null = null;
-let subscriptions: any[] = [];
+let realtimeActive = false;
+let subscriptions: Array<() => void> = [];
 
 // Entidades para monitorar
 const WATCH_ENTITIES = [
@@ -22,19 +21,19 @@ const WATCH_ENTITIES = [
 ] as const;
 
 export function setupRealtime(onChange?: (entityType: string, entityId: string) => void) {
-  if (realtime) {
+  if (realtimeActive) {
     // Já inicializado
     return;
   }
 
-  realtime = new Client(databases.client);
+  realtimeActive = true;
 
   for (const entity of WATCH_ENTITIES) {
     const collectionId = getCollectionId(entity);
     if (!collectionId) continue;
 
     const channel = `databases.${DATABASE_ID}.collections.${collectionId}.documents`;
-    const subscription = realtime.subscribe(channel, (response: any) => {
+    const subscription = client.subscribe(channel, (response: any) => {
       const { payload, events } = response;
 
       for (const event of events) {
@@ -85,15 +84,15 @@ function getCollectionId(entity: string): string | null {
 }
 
 export function cleanupRealtime() {
-  for (const sub of subscriptions) {
+  for (const unsub of subscriptions) {
     try {
-      sub.unsubscribe();
+      unsub();
     } catch (err) {
       console.warn('Failed to unsubscribe:', err);
     }
   }
   subscriptions = [];
-  realtime = null;
+  realtimeActive = false;
 }
 
 // Hook React para usar Realtime
